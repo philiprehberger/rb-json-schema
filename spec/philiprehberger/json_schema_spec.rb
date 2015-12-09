@@ -171,4 +171,115 @@ RSpec.describe Philiprehberger::JsonSchema do
       expect(described_class.valid?(42, { type: 'string' })).to be false
     end
   end
+
+  describe 'nested objects' do
+    it 'validates deeply nested schemas' do
+      schema = {
+        type: 'object',
+        properties: {
+          'address' => {
+            type: 'object',
+            required: %w[city],
+            properties: {
+              'city' => { type: 'string' },
+              'zip' => { type: 'string' }
+            }
+          }
+        }
+      }
+      errors = described_class.validate({ 'address' => { 'city' => 'NYC' } }, schema)
+      expect(errors).to be_empty
+    end
+
+    it 'reports nested missing required property' do
+      schema = {
+        type: 'object',
+        properties: {
+          'address' => {
+            type: 'object',
+            required: %w[city],
+            properties: {
+              'city' => { type: 'string' }
+            }
+          }
+        }
+      }
+      errors = described_class.validate({ 'address' => {} }, schema)
+      expect(errors).to include(match(/\$\.address.*missing required property 'city'/))
+    end
+  end
+
+  describe 'combined constraints' do
+    it 'validates string with both minLength and maxLength' do
+      schema = { type: 'string', minLength: 2, maxLength: 5 }
+      expect(described_class.validate('abc', schema)).to be_empty
+      expect(described_class.validate('a', schema)).not_to be_empty
+      expect(described_class.validate('abcdef', schema)).not_to be_empty
+    end
+
+    it 'validates integer with both minimum and maximum' do
+      schema = { type: 'integer', minimum: 1, maximum: 10 }
+      expect(described_class.validate(5, schema)).to be_empty
+      expect(described_class.validate(0, schema)).not_to be_empty
+      expect(described_class.validate(11, schema)).not_to be_empty
+    end
+  end
+
+  describe 'empty data' do
+    it 'validates empty string against string type' do
+      schema = { type: 'string' }
+      expect(described_class.validate('', schema)).to be_empty
+    end
+
+    it 'validates empty array against array type' do
+      schema = { type: 'array' }
+      expect(described_class.validate([], schema)).to be_empty
+    end
+
+    it 'validates empty object against object type' do
+      schema = { type: 'object' }
+      expect(described_class.validate({}, schema)).to be_empty
+    end
+
+    it 'validates empty array fails minItems' do
+      schema = { type: 'array', minItems: 1 }
+      expect(described_class.validate([], schema)).not_to be_empty
+    end
+  end
+
+  describe 'error messages' do
+    it 'includes path in type error messages' do
+      schema = { type: 'string' }
+      errors = described_class.validate(42, schema)
+      expect(errors.first).to start_with('$:')
+    end
+
+    it 'includes array index in item error messages' do
+      schema = { type: 'array', items: { type: 'string' } }
+      errors = described_class.validate(['ok', 123, 'fine'], schema)
+      expect(errors.size).to eq(1)
+      expect(errors.first).to include('$[1]')
+    end
+
+    it 'returns multiple errors for multiple violations' do
+      schema = {
+        type: 'object',
+        required: %w[a b c],
+        properties: {
+          'a' => { type: 'string' },
+          'b' => { type: 'string' },
+          'c' => { type: 'string' }
+        }
+      }
+      errors = described_class.validate({}, schema)
+      expect(errors.size).to eq(3)
+    end
+  end
+
+  describe 'schema with no type' do
+    it 'does not validate type when type is not specified' do
+      schema = { minimum: 5 }
+      expect(described_class.validate(10, schema)).to be_empty
+    end
+  end
 end
