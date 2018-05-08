@@ -3,6 +3,7 @@
 [![Tests](https://github.com/philiprehberger/rb-json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rb-json-schema/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-json_schema.svg)](https://rubygems.org/gems/philiprehberger-json_schema)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-json-schema)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 JSON Schema validator supporting common draft-07 keywords
 
