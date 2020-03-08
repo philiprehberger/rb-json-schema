@@ -282,4 +282,293 @@ RSpec.describe Philiprehberger::JsonSchema do
       expect(described_class.validate(10, schema)).to be_empty
     end
   end
+
+  describe 'const' do
+    it 'passes when value equals const' do
+      schema = { const: 'fixed' }
+      expect(described_class.validate('fixed', schema)).to be_empty
+    end
+
+    it 'fails when value does not equal const' do
+      schema = { const: 'fixed' }
+      errors = described_class.validate('other', schema)
+      expect(errors).to include(match(/does not equal const/))
+    end
+
+    it 'works with numeric const' do
+      schema = { const: 42 }
+      expect(described_class.validate(42, schema)).to be_empty
+      expect(described_class.validate(43, schema)).not_to be_empty
+    end
+
+    it 'works with null const' do
+      schema = { const: nil }
+      expect(described_class.validate(nil, schema)).to be_empty
+      expect(described_class.validate('', schema)).not_to be_empty
+    end
+  end
+
+  describe '$ref and $defs' do
+    it 'resolves $ref to $defs' do
+      schema = {
+        type: 'object',
+        properties: {
+          'name' => { '$ref' => '#/$defs/name_type' }
+        },
+        '$defs' => {
+          'name_type' => { type: 'string', minLength: 1 }
+        }
+      }
+      expect(described_class.validate({ 'name' => 'Alice' }, schema)).to be_empty
+      expect(described_class.validate({ 'name' => '' }, schema)).not_to be_empty
+    end
+
+    it 'reports error for unresolved $ref' do
+      schema = {
+        type: 'object',
+        properties: {
+          'name' => { '$ref' => '#/$defs/nonexistent' }
+        }
+      }
+      errors = described_class.validate({ 'name' => 'Alice' }, schema)
+      expect(errors).to include(match(/unresolved \$ref/))
+    end
+
+    it 'resolves nested $ref paths' do
+      schema = {
+        type: 'object',
+        properties: {
+          'addr' => { '$ref' => '#/definitions/address' }
+        },
+        'definitions' => {
+          'address' => {
+            type: 'object',
+            required: %w[city],
+            properties: { 'city' => { type: 'string' } }
+          }
+        }
+      }
+      expect(described_class.validate({ 'addr' => { 'city' => 'NYC' } }, schema)).to be_empty
+      expect(described_class.validate({ 'addr' => {} }, schema)).not_to be_empty
+    end
+  end
+
+  describe 'allOf' do
+    it 'passes when data matches all sub-schemas' do
+      schema = {
+        allOf: [
+          { type: 'object', required: %w[name] },
+          { type: 'object', required: %w[age] }
+        ]
+      }
+      expect(described_class.validate({ 'name' => 'Alice', 'age' => 30 }, schema)).to be_empty
+    end
+
+    it 'fails when data does not match one of the sub-schemas' do
+      schema = {
+        allOf: [
+          { type: 'object', required: %w[name] },
+          { type: 'object', required: %w[age] }
+        ]
+      }
+      errors = described_class.validate({ 'name' => 'Alice' }, schema)
+      expect(errors).to include(match(/allOf\[1\] failed/))
+    end
+  end
+
+  describe 'anyOf' do
+    it 'passes when data matches at least one sub-schema' do
+      schema = {
+        anyOf: [
+          { type: 'string' },
+          { type: 'integer' }
+        ]
+      }
+      expect(described_class.validate('hello', schema)).to be_empty
+      expect(described_class.validate(42, schema)).to be_empty
+    end
+
+    it 'fails when data matches none of the sub-schemas' do
+      schema = {
+        anyOf: [
+          { type: 'string' },
+          { type: 'integer' }
+        ]
+      }
+      errors = described_class.validate(true, schema)
+      expect(errors).to include(match(/does not match any schema in anyOf/))
+    end
+  end
+
+  describe 'oneOf' do
+    it 'passes when data matches exactly one sub-schema' do
+      schema = {
+        oneOf: [
+          { type: 'string', minLength: 5 },
+          { type: 'string', maxLength: 3 }
+        ]
+      }
+      expect(described_class.validate('hi', schema)).to be_empty
+      expect(described_class.validate('hello world', schema)).to be_empty
+    end
+
+    it 'fails when data matches zero sub-schemas' do
+      schema = {
+        oneOf: [
+          { type: 'string', minLength: 10 },
+          { type: 'integer' }
+        ]
+      }
+      errors = described_class.validate('short', schema)
+      expect(errors).to include(match(/does not match any schema in oneOf/))
+    end
+
+    it 'fails when data matches more than one sub-schema' do
+      schema = {
+        oneOf: [
+          { type: 'integer' },
+          { type: 'number' }
+        ]
+      }
+      errors = described_class.validate(42, schema)
+      expect(errors).to include(match(/matches 2 schemas in oneOf/))
+    end
+  end
+
+  describe 'not' do
+    it 'passes when data does not match the not schema' do
+      schema = { not: { type: 'string' } }
+      expect(described_class.validate(42, schema)).to be_empty
+    end
+
+    it 'fails when data matches the not schema' do
+      schema = { not: { type: 'string' } }
+      errors = described_class.validate('hello', schema)
+      expect(errors).to include(match(/should not match the schema in 'not'/))
+    end
+  end
+
+  describe 'if/then/else' do
+    let(:schema) do
+      {
+        type: 'object',
+        if: { properties: { 'type' => { const: 'business' } }, required: %w[type] },
+        then: { required: %w[company] },
+        else: { required: %w[first_name] }
+      }
+    end
+
+    it 'validates against then when if condition matches' do
+      data = { 'type' => 'business', 'company' => 'Acme' }
+      expect(described_class.validate(data, schema)).to be_empty
+    end
+
+    it 'fails when if matches but then fails' do
+      data = { 'type' => 'business' }
+      errors = described_class.validate(data, schema)
+      expect(errors).to include(match(/missing required property 'company'/))
+    end
+
+    it 'validates against else when if condition does not match' do
+      data = { 'type' => 'personal', 'first_name' => 'Alice' }
+      expect(described_class.validate(data, schema)).to be_empty
+    end
+
+    it 'fails when if does not match and else fails' do
+      data = { 'type' => 'personal' }
+      errors = described_class.validate(data, schema)
+      expect(errors).to include(match(/missing required property 'first_name'/))
+    end
+  end
+
+  describe 'additionalProperties' do
+    it 'rejects additional properties when set to false' do
+      schema = {
+        type: 'object',
+        properties: { 'name' => { type: 'string' } },
+        additionalProperties: false
+      }
+      errors = described_class.validate({ 'name' => 'Alice', 'extra' => 'nope' }, schema)
+      expect(errors).to include(match(/additional property 'extra' is not allowed/))
+    end
+
+    it 'allows defined properties when additionalProperties is false' do
+      schema = {
+        type: 'object',
+        properties: { 'name' => { type: 'string' } },
+        additionalProperties: false
+      }
+      expect(described_class.validate({ 'name' => 'Alice' }, schema)).to be_empty
+    end
+
+    it 'validates additional properties against a schema' do
+      schema = {
+        type: 'object',
+        properties: { 'name' => { type: 'string' } },
+        additionalProperties: { type: 'integer' }
+      }
+      expect(described_class.validate({ 'name' => 'Alice', 'age' => 30 }, schema)).to be_empty
+      errors = described_class.validate({ 'name' => 'Alice', 'age' => 'thirty' }, schema)
+      expect(errors).to include(match(/expected type integer/))
+    end
+  end
+
+  describe 'patternProperties' do
+    it 'validates properties matching patterns' do
+      schema = {
+        type: 'object',
+        patternProperties: {
+          '^x-' => { type: 'string' }
+        }
+      }
+      expect(described_class.validate({ 'x-custom' => 'hello' }, schema)).to be_empty
+      errors = described_class.validate({ 'x-custom' => 42 }, schema)
+      expect(errors).to include(match(/expected type string/))
+    end
+
+    it 'does not affect properties that do not match patterns' do
+      schema = {
+        type: 'object',
+        patternProperties: {
+          '^x-' => { type: 'string' }
+        }
+      }
+      expect(described_class.validate({ 'name' => 42 }, schema)).to be_empty
+    end
+
+    it 'works with additionalProperties' do
+      schema = {
+        type: 'object',
+        properties: { 'id' => { type: 'integer' } },
+        patternProperties: { '^x-' => { type: 'string' } },
+        additionalProperties: false
+      }
+      expect(described_class.validate({ 'id' => 1, 'x-tag' => 'ok' }, schema)).to be_empty
+      errors = described_class.validate({ 'id' => 1, 'x-tag' => 'ok', 'unknown' => true }, schema)
+      expect(errors).to include(match(/additional property 'unknown' is not allowed/))
+    end
+  end
+
+  describe '.compile' do
+    it 'returns a CompiledSchema instance' do
+      compiled = described_class.compile({ type: 'string' })
+      expect(compiled).to be_a(Philiprehberger::JsonSchema::CompiledSchema)
+    end
+
+    it 'validates data with compiled schema' do
+      compiled = described_class.compile({
+                                           type: 'object',
+                                           required: %w[name],
+                                           properties: { 'name' => { type: 'string' } }
+                                         })
+      expect(compiled.validate({ 'name' => 'Alice' })).to be_empty
+      expect(compiled.validate({})).not_to be_empty
+    end
+
+    it 'supports valid? on compiled schema' do
+      compiled = described_class.compile({ type: 'integer', minimum: 0 })
+      expect(compiled.valid?(42)).to be true
+      expect(compiled.valid?(-1)).to be false
+    end
+  end
 end

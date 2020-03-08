@@ -24,5 +24,13 @@ module Philiprehberger
     def self.valid?(data, schema)
       validate(data, schema).empty?
     end
+
+    # Compile a schema for repeated validation
+    #
+    # @param schema [Hash] the JSON Schema definition
+    # @return [CompiledSchema] a compiled validator instance
+    def self.compile(schema)
+      CompiledSchema.new(schema)
+    end
   end
 end
