@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Philip Rehberger']
   spec.email = ['me@philiprehberger.com']
 
-  spec.summary = 'JSON Schema validator supporting common draft-07 keywords'
+  spec.summary = 'JSON Schema validator supporting common draft-07 keywords with schema composition, conditional validation, and compiled schemas'
   spec.description = 'Validate Ruby data structures against JSON Schema definitions with support for ' \
                      'type checking, required properties, pattern matching, numeric ranges, enums, and array validation.'
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-json_schema'
