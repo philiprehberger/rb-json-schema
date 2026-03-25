@@ -97,8 +97,8 @@ Philiprehberger::JsonSchema.valid?('yellow', schema)  # => false
 
 ```bash
 bundle install
-bundle exec rspec      # Run tests
-bundle exec rubocop    # Check code style
+bundle exec rspec
+bundle exec rubocop
 ```
 
 ## License
