@@ -88,10 +88,28 @@ Philiprehberger::JsonSchema.valid?('yellow', schema)  # => false
 
 ## API
 
+### `Philiprehberger::JsonSchema`
+
 | Method | Description |
 |--------|-------------|
-| `JsonSchema.validate(data, schema)` | Validate data against a schema, returns array of error strings |
-| `JsonSchema.valid?(data, schema)` | Returns true if data passes validation |
+| `.validate(data, schema)` | Validate data against a schema, returns array of error strings |
+| `.valid?(data, schema)` | Returns `true` if data passes validation |
+
+### `Philiprehberger::JsonSchema::Validator`
+
+| Method | Description |
+|--------|-------------|
+| `#validate(data, schema, path: '$')` | Run all validations and return an array of error strings |
+| `#validate_type(data, schema, path, errors)` | Check `type` keyword (`string`, `integer`, `number`, `boolean`, `array`, `object`, `null`) |
+| `#validate_required(data, schema, path, errors)` | Check `required` keyword — verify object contains required keys |
+| `#validate_properties(data, schema, path, errors)` | Check `properties` keyword — recursively validate each property against its sub-schema |
+| `#validate_pattern(data, schema, path, errors)` | Check `pattern` keyword — match string against a regular expression |
+| `#validate_string_length(data, schema, path, errors)` | Check `minLength` / `maxLength` keywords for strings |
+| `#validate_numeric_range(data, schema, path, errors)` | Check `minimum` / `maximum` keywords for numbers |
+| `#validate_enum(data, schema, path, errors)` | Check `enum` keyword — verify value is in the allowed list |
+| `#validate_items(data, schema, path, errors)` | Check `items` keyword — recursively validate each array element |
+| `#validate_array_length(data, schema, path, errors)` | Check `minItems` / `maxItems` keywords for arrays |
+| `#ruby_type_name(value)` | Map a Ruby value to its JSON Schema type name string |
 
 ## Development
 
