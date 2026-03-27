@@ -62,9 +62,7 @@ module Philiprehberger
 
         required.each do |key|
           key_str = key.to_s
-          unless data.key?(key_str) || data.key?(key_str.to_sym)
-            errors << "#{path}: missing required property '#{key_str}'"
-          end
+          errors << "#{path}: missing required property '#{key_str}'" unless data.key?(key_str) || data.key?(key_str.to_sym)
         end
       end
 
