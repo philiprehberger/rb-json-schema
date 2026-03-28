@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-27
+
+### Added
+- Schema composition with `allOf`, `anyOf`, and `oneOf` keywords
+- Negation with `not` keyword
+- Conditional validation with `if`/`then`/`else` keywords
+- Schema references with `$ref` and `$defs` support (JSON Pointer resolution)
+- `additionalProperties` control (boolean or schema)
+- `patternProperties` for regex-based property validation
+- `const` keyword for exact value matching
+- `JsonSchema.compile(schema)` for compiled schemas with repeated validation
+- `CompiledSchema` class with `#validate` and `#valid?` methods
+- Support section with LinkedIn and packages badges in README
+
+### Changed
+- Error paths now propagate through composition keywords for precise location reporting
+- Expanded README with documentation for all new features
+- Added all 8 standard badges to README
+
 ## [0.1.4] - 2026-03-24
 
 ### Changed
