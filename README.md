@@ -2,12 +2,7 @@
 
 [![Tests](https://github.com/philiprehberger/rb-json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rb-json-schema/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-json_schema.svg)](https://rubygems.org/gems/philiprehberger-json_schema)
-[![GitHub release](https://img.shields.io/github/v/release/philiprehberger/rb-json-schema)](https://github.com/philiprehberger/rb-json-schema/releases)
 [![Last updated](https://img.shields.io/github/last-commit/philiprehberger/rb-json-schema)](https://github.com/philiprehberger/rb-json-schema/commits/main)
-[![License](https://img.shields.io/github/license/philiprehberger/rb-json-schema)](LICENSE)
-[![Bug Reports](https://img.shields.io/github/issues/philiprehberger/rb-json-schema/bug)](https://github.com/philiprehberger/rb-json-schema/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
-[![Feature Requests](https://img.shields.io/github/issues/philiprehberger/rb-json-schema/enhancement)](https://github.com/philiprehberger/rb-json-schema/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
-[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 JSON Schema validator supporting common draft-07 keywords with schema composition, conditional validation, and compiled schemas
 
@@ -210,10 +205,21 @@ bundle exec rubocop
 
 ## Support
 
-If you find this package useful, consider giving it a star on GitHub — it helps motivate continued maintenance and development.
+If you find this project useful:
 
-[![LinkedIn](https://img.shields.io/badge/Philip%20Rehberger-LinkedIn-0A66C2?logo=linkedin)](https://www.linkedin.com/in/philiprehberger)
-[![More packages](https://img.shields.io/badge/more-open%20source%20packages-blue)](https://philiprehberger.com/open-source-packages)
+⭐ [Star the repo](https://github.com/philiprehberger/rb-json-schema)
+
+🐛 [Report issues](https://github.com/philiprehberger/rb-json-schema/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+
+💡 [Suggest features](https://github.com/philiprehberger/rb-json-schema/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+
+❤️ [Sponsor development](https://github.com/sponsors/philiprehberger)
+
+🌐 [All Open Source Projects](https://philiprehberger.com/open-source-packages)
+
+💻 [GitHub Profile](https://github.com/philiprehberger)
+
+🔗 [LinkedIn Profile](https://www.linkedin.com/in/philiprehberger)
 
 ## License
 
