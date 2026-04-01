@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'JSON Schema validator supporting common draft-07 keywords'
   spec.description = 'Validate Ruby data structures against JSON Schema definitions with support for ' \
-                       'type checking, required properties, pattern matching, numeric ranges, enums, and array validation.'
+                     'type checking, required properties, pattern matching, numeric ranges, enums, and array validation.'
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-json_schema'
   spec.license = 'MIT'
 
