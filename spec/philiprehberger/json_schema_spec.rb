@@ -549,6 +549,138 @@ RSpec.describe Philiprehberger::JsonSchema do
     end
   end
 
+  describe 'exclusiveMinimum' do
+    it 'passes when value is strictly greater' do
+      schema = { type: 'integer', exclusiveMinimum: 0 }
+      expect(described_class.validate(1, schema)).to be_empty
+    end
+
+    it 'fails when value equals the bound' do
+      schema = { type: 'integer', exclusiveMinimum: 0 }
+      errors = described_class.validate(0, schema)
+      expect(errors).to include(match(/not greater than exclusiveMinimum 0/))
+    end
+
+    it 'fails when value is below the bound' do
+      schema = { type: 'number', exclusiveMinimum: 1.5 }
+      expect(described_class.validate(1.5, schema)).not_to be_empty
+      expect(described_class.validate(1.4, schema)).not_to be_empty
+      expect(described_class.validate(1.6, schema)).to be_empty
+    end
+  end
+
+  describe 'exclusiveMaximum' do
+    it 'passes when value is strictly less' do
+      schema = { type: 'integer', exclusiveMaximum: 10 }
+      expect(described_class.validate(9, schema)).to be_empty
+    end
+
+    it 'fails when value equals the bound' do
+      schema = { type: 'integer', exclusiveMaximum: 10 }
+      errors = described_class.validate(10, schema)
+      expect(errors).to include(match(/not less than exclusiveMaximum 10/))
+    end
+
+    it 'combines with exclusiveMinimum' do
+      schema = { type: 'integer', exclusiveMinimum: 0, exclusiveMaximum: 10 }
+      expect(described_class.validate(5, schema)).to be_empty
+      expect(described_class.validate(0, schema)).not_to be_empty
+      expect(described_class.validate(10, schema)).not_to be_empty
+    end
+  end
+
+  describe 'multipleOf' do
+    it 'passes when value is a multiple' do
+      schema = { type: 'integer', multipleOf: 5 }
+      expect(described_class.validate(10, schema)).to be_empty
+      expect(described_class.validate(0, schema)).to be_empty
+    end
+
+    it 'fails when value is not a multiple' do
+      schema = { type: 'integer', multipleOf: 5 }
+      errors = described_class.validate(7, schema)
+      expect(errors).to include(match(/is not a multiple of 5/))
+    end
+
+    it 'works with fractional multiples' do
+      schema = { type: 'number', multipleOf: 0.1 }
+      expect(described_class.validate(0.3, schema)).to be_empty
+      expect(described_class.validate(0.25, schema)).not_to be_empty
+    end
+
+    it 'ignores non-positive or non-numeric multipleOf' do
+      expect(described_class.validate(7, { multipleOf: 0 })).to be_empty
+      expect(described_class.validate(7, { multipleOf: -2 })).to be_empty
+      expect(described_class.validate(7, { multipleOf: 'x' })).to be_empty
+    end
+  end
+
+  describe 'uniqueItems' do
+    it 'passes when all items are unique' do
+      schema = { type: 'array', uniqueItems: true }
+      expect(described_class.validate([1, 2, 3], schema)).to be_empty
+    end
+
+    it 'fails when items are duplicated' do
+      schema = { type: 'array', uniqueItems: true }
+      errors = described_class.validate([1, 2, 2], schema)
+      expect(errors).to include(match(/array items are not unique/))
+    end
+
+    it 'is a no-op when uniqueItems is false' do
+      schema = { type: 'array', uniqueItems: false }
+      expect(described_class.validate([1, 1, 1], schema)).to be_empty
+    end
+
+    it 'uses deep equality for hashes' do
+      schema = { type: 'array', uniqueItems: true }
+      duplicates = [{ 'a' => 1 }, { 'a' => 1 }]
+      expect(described_class.validate(duplicates, schema)).not_to be_empty
+
+      distinct = [{ 'a' => 1 }, { 'a' => 2 }]
+      expect(described_class.validate(distinct, schema)).to be_empty
+    end
+  end
+
+  describe 'minProperties / maxProperties' do
+    it 'passes when property count is within bounds' do
+      schema = { type: 'object', minProperties: 1, maxProperties: 3 }
+      expect(described_class.validate({ 'a' => 1 }, schema)).to be_empty
+      expect(described_class.validate({ 'a' => 1, 'b' => 2, 'c' => 3 }, schema)).to be_empty
+    end
+
+    it 'fails when below minProperties' do
+      schema = { type: 'object', minProperties: 2 }
+      errors = described_class.validate({ 'a' => 1 }, schema)
+      expect(errors).to include(match(/object has 1 properties, expected at least 2/))
+    end
+
+    it 'fails when above maxProperties' do
+      schema = { type: 'object', maxProperties: 1 }
+      errors = described_class.validate({ 'a' => 1, 'b' => 2 }, schema)
+      expect(errors).to include(match(/object has 2 properties, expected at most 1/))
+    end
+
+    it 'counts an empty object as zero' do
+      schema = { type: 'object', minProperties: 1 }
+      expect(described_class.validate({}, schema)).not_to be_empty
+    end
+  end
+
+  describe 'new keywords via compile' do
+    it 'propagates uniqueItems through CompiledSchema' do
+      compiled = described_class.compile({ type: 'array', uniqueItems: true })
+      expect(compiled.valid?([1, 2, 3])).to be true
+      expect(compiled.valid?([1, 1])).to be false
+    end
+
+    it 'propagates multipleOf through CompiledSchema' do
+      compiled = described_class.compile({ type: 'integer', multipleOf: 3 })
+      expect(compiled.valid?(9)).to be true
+      expect(compiled.valid?(10)).to be false
+    end
+  end
+
   describe '.compile' do
     it 'returns a CompiledSchema instance' do
       compiled = described_class.compile({ type: 'string' })

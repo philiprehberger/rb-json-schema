@@ -141,6 +141,39 @@ Philiprehberger::JsonSchema.valid?('fixed_value', schema)  # => true
 Philiprehberger::JsonSchema.valid?('other', schema)        # => false
 ```
 
+### Numeric Bounds (exclusive and multipleOf)
+
+```ruby
+# exclusive bounds
+schema = { type: 'integer', exclusiveMinimum: 0, exclusiveMaximum: 10 }
+Philiprehberger::JsonSchema.valid?(5, schema)   # => true
+Philiprehberger::JsonSchema.valid?(0, schema)   # => false (equal to exclusiveMinimum)
+Philiprehberger::JsonSchema.valid?(10, schema)  # => false (equal to exclusiveMaximum)
+
+# multipleOf (BigDecimal-backed, safe for fractions)
+schema = { type: 'number', multipleOf: 0.1 }
+Philiprehberger::JsonSchema.valid?(0.3, schema)   # => true
+Philiprehberger::JsonSchema.valid?(0.25, schema)  # => false
+```
+
+### Unique Array Items
+
+```ruby
+schema = { type: 'array', uniqueItems: true }
+Philiprehberger::JsonSchema.valid?([1, 2, 3], schema)                     # => true
+Philiprehberger::JsonSchema.valid?([1, 2, 2], schema)                     # => false
+Philiprehberger::JsonSchema.valid?([{ 'a' => 1 }, { 'a' => 1 }], schema)  # => false (deep equality)
+```
+
+### Object Property Counts
+
+```ruby
+schema = { type: 'object', minProperties: 1, maxProperties: 3 }
+Philiprehberger::JsonSchema.valid?({ 'a' => 1 }, schema)                               # => true
+Philiprehberger::JsonSchema.valid?({}, schema)                                          # => false
+Philiprehberger::JsonSchema.valid?({ 'a' => 1, 'b' => 2, 'c' => 3, 'd' => 4 }, schema) # => false
+```
+
 ### Compiled Schemas
 
 ```ruby
@@ -182,11 +215,15 @@ compiled.validate({ 'id' => 'x' }) # => ["$.id: expected type integer..."]
 | `patternProperties` | Regex-keyed sub-schemas for matching property names |
 | `pattern` | Regex match for strings |
 | `minLength` / `maxLength` | String length constraints |
-| `minimum` / `maximum` | Numeric range constraints |
+| `minimum` / `maximum` | Numeric range constraints (inclusive) |
+| `exclusiveMinimum` / `exclusiveMaximum` | Numeric range constraints (exclusive) |
+| `multipleOf` | Value must be a multiple of the given number (BigDecimal-backed) |
 | `enum` | Allowed value list |
 | `const` | Exact value match |
 | `items` | Schema for array elements |
 | `minItems` / `maxItems` | Array length constraints |
+| `uniqueItems` | Require all array items to be unique (deep equality) |
+| `minProperties` / `maxProperties` | Object property-count constraints |
 | `allOf` | Data must match all sub-schemas |
 | `anyOf` | Data must match at least one sub-schema |
 | `oneOf` | Data must match exactly one sub-schema |
