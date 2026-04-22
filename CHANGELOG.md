@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-17
+
+### Added
+- `exclusiveMinimum` and `exclusiveMaximum` keywords for strict numeric bounds
+- `multipleOf` keyword, using BigDecimal arithmetic to avoid IEEE-754 drift on fractional multiples
+- `uniqueItems` keyword for arrays (deep equality on nested values)
+- `minProperties` and `maxProperties` keywords for object property-count constraints
+- README: Usage examples for the new keywords and expanded Supported Keywords table
+
 ## [0.2.3] - 2026-04-09
 
 ### Fixed

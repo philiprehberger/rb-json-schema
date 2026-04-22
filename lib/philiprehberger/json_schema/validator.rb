@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'bigdecimal'
+
 module Philiprehberger
   module JsonSchema
     # Core validation engine that checks data against a JSON Schema (draft-07 subset)
@@ -18,15 +20,19 @@ module Philiprehberger
         validate_type(data, schema, path, errors)
         validate_const(data, schema, path, errors)
         validate_required(data, schema, path, errors)
+        validate_object_size(data, schema, path, errors)
         validate_properties(data, schema, path, errors, root_schema)
         validate_additional_properties(data, schema, path, errors, root_schema)
         validate_pattern_properties(data, schema, path, errors, root_schema)
         validate_pattern(data, schema, path, errors)
         validate_string_length(data, schema, path, errors)
         validate_numeric_range(data, schema, path, errors)
+        validate_exclusive_range(data, schema, path, errors)
+        validate_multiple_of(data, schema, path, errors)
         validate_enum(data, schema, path, errors)
         validate_items(data, schema, path, errors, root_schema)
         validate_array_length(data, schema, path, errors)
+        validate_unique_items(data, schema, path, errors)
         validate_ref(data, schema, path, errors, root_schema)
         validate_all_of(data, schema, path, errors, root_schema)
         validate_any_of(data, schema, path, errors, root_schema)
@@ -176,6 +182,31 @@ module Philiprehberger
         errors << "#{path}: value #{data} is greater than maximum #{max}" if max && data > max
       end
 
+      def validate_exclusive_range(data, schema, path, errors)
+        return unless data.is_a?(Numeric) && !data.is_a?(Complex)
+
+        excl_min = schema_key(schema, :exclusiveMinimum)
+        excl_max = schema_key(schema, :exclusiveMaximum)
+
+        min_violated = excl_min.is_a?(Numeric) && data <= excl_min
+        max_violated = excl_max.is_a?(Numeric) && data >= excl_max
+
+        errors << "#{path}: value #{data} is not greater than exclusiveMinimum #{excl_min}" if min_violated
+        errors << "#{path}: value #{data} is not less than exclusiveMaximum #{excl_max}" if max_violated
+      end
+
+      def validate_multiple_of(data, schema, path, errors)
+        return unless data.is_a?(Numeric) && !data.is_a?(Complex)
+
+        multiple = schema_key(schema, :multipleOf)
+        return unless multiple.is_a?(Numeric) && multiple.positive? && multiple.finite?
+
+        # Use BigDecimal via string representation to sidestep IEEE-754 drift
+        # (e.g. 0.3 % 0.1 != 0 in Float arithmetic).
+        remainder = BigDecimal(data.to_s) % BigDecimal(multiple.to_s)
+        errors << "#{path}: value #{data} is not a multiple of #{multiple}" unless remainder.zero?
+      end
+
       def validate_enum(data, schema, path, errors)
         allowed = schema_key(schema, :enum)
         return unless allowed.is_a?(Array)
@@ -202,6 +233,29 @@ module Philiprehberger
 
         errors << "#{path}: array length #{data.length} is less than minItems #{min}" if min && data.length < min
         errors << "#{path}: array length #{data.length} is greater than maxItems #{max}" if max && data.length > max
+      end
+
+      def validate_unique_items(data, schema, path, errors)
+        return unless data.is_a?(Array)
+
+        unique = schema_key(schema, :uniqueItems)
+        return unless unique == true
+
+        errors << "#{path}: array items are not unique" if data.length != data.uniq.length
+      end
+
+      def validate_object_size(data, schema, path, errors)
+        return unless data.is_a?(Hash)
+
+        min = schema_key(schema, :minProperties)
+        max = schema_key(schema, :maxProperties)
+        size = data.size
+
+        under_min = min.is_a?(Integer) && size < min
+        over_max = max.is_a?(Integer) && size > max
+
+        errors << "#{path}: object has #{size} properties, expected at least #{min}" if under_min
+        errors << "#{path}: object has #{size} properties, expected at most #{max}" if over_max
       end
 
       def validate_ref(data, schema, path, errors, root_schema)
