@@ -25,6 +25,19 @@ module Philiprehberger
       validate(data, schema).empty?
     end
 
+    # Validate data against a JSON Schema; raise on failure.
+    #
+    # @param data [Object] the data to validate
+    # @param schema [Hash] the JSON Schema definition
+    # @return [Object] the validated data, unchanged
+    # @raise [Error] when validation fails (message is the joined errors)
+    def self.validate!(data, schema)
+      errors = validate(data, schema)
+      raise Error, errors.join('; ') unless errors.empty?
+
+      data
+    end
+
     # Compile a schema for repeated validation
     #
     # @param schema [Hash] the JSON Schema definition

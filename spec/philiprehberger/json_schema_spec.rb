@@ -172,6 +172,43 @@ RSpec.describe Philiprehberger::JsonSchema do
     end
   end
 
+  describe '.validate!' do
+    it 'returns the data when validation passes' do
+      schema = { 'type' => 'string' }
+      expect(described_class.validate!('hello', schema)).to eq('hello')
+    end
+
+    it 'raises Philiprehberger::JsonSchema::Error when validation fails' do
+      schema = { 'type' => 'string' }
+      expect { described_class.validate!(42, schema) }.to raise_error(Philiprehberger::JsonSchema::Error)
+    end
+
+    it 'includes the validation error in the raised message' do
+      schema = { 'type' => 'string' }
+      expect { described_class.validate!(42, schema) }
+        .to raise_error(Philiprehberger::JsonSchema::Error, /expected type string/)
+    end
+
+    it 'joins multiple errors with semicolons in the raised message' do
+      schema = {
+        type: 'object',
+        required: %w[a b],
+        properties: {
+          'a' => { type: 'string' },
+          'b' => { type: 'string' }
+        }
+      }
+      expect { described_class.validate!({}, schema) }
+        .to raise_error(Philiprehberger::JsonSchema::Error, /;/)
+    end
+
+    it 'returns the same object (identity preserved)' do
+      schema = { 'type' => 'object' }
+      data = { 'name' => 'Alice' }
+      expect(described_class.validate!(data, schema)).to equal(data)
+    end
+  end
+
   describe 'nested objects' do
     it 'validates deeply nested schemas' do
       schema = {

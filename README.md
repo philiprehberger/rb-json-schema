@@ -43,6 +43,10 @@ errors = Philiprehberger::JsonSchema.validate({ 'name' => 'Alice', 'age' => 30 }
 
 Philiprehberger::JsonSchema.valid?({ 'name' => 'Alice', 'age' => 30 }, schema)
 # => true
+
+payload = { 'name' => 'Alice', 'age' => 30 }
+data = Philiprehberger::JsonSchema.validate!(payload, schema)
+# raises Philiprehberger::JsonSchema::Error if invalid; returns payload otherwise
 ```
 
 ### Schema Composition (allOf, anyOf, oneOf)
@@ -195,6 +199,7 @@ compiled.validate({ 'id' => 'x' }) # => ["$.id: expected type integer..."]
 |--------|-------------|
 | `.validate(data, schema)` | Validate data against a schema, returns array of error strings |
 | `.valid?(data, schema)` | Returns `true` if data passes validation |
+| `.validate!(data, schema)` | Validates and returns the data; raises Error on validation failure |
 | `.compile(schema)` | Returns a `CompiledSchema` for repeated validation |
 
 ### `Philiprehberger::JsonSchema::CompiledSchema`

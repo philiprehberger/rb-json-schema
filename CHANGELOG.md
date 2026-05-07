@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-07
+
+### Added
+- `JsonSchema.validate!(data, schema)` — bang variant that returns the data on success and raises `JsonSchema::Error` with joined error messages on failure. Pairs with the existing `validate` (returns errors) and `valid?` (boolean).
+
 ## [0.3.0] - 2026-04-17
 
 ### Added
